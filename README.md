@@ -1,6 +1,6 @@
 # GeoDNS in Go
 
-[English README](./README.md)
+[English README](./READM-EN.md)
 
 [NTP Pool](http://www.pool.ntp.org/)系统和一些类似的服务都用架构在这个DNS基础上. 它是[pgeodns](http://github.com/abh/pgeodns) 的替代者。
 [![Build Status](https://drone.io/github.com/abh/geodns/status.png)](https://drone.io/github.com/abh/geodns/latest)
@@ -62,101 +62,67 @@ databasedir=${datadir}/GeoIP
 
 ## 简单配置
 
-There's a sample configuration file in `dns/example.com.json`. This is currently
-derived from the `test.example.com` data used for unit tests and not an example
-of a "best practices" configuration.
+配置示例： `dns/example.com.json`. 用于单元测试，不是最佳实践的示例。
 
-For testing there's also a bigger test file at:
+如下是一个更大的测试文件：
 
 ```sh
 mkdir -p dns
 curl -o dns/test.ntppool.org.json http://tmp.askask.com/2012/08/dns/ntppool.org.json.big
 ```
 
-## Run it
+## 运行DNS server
 
-After building the server you can run it with:
+构建好后，照如下方式运行，127.0.0.1是网络接口地址：
 
-`./geodns -log -interface 127.1 -port 5053`
+`./geodns -log -interface 127.0.0.1 -port 5053`
 
-To test the responses run
+在另一个窗口测试：
 
-`dig -t a test.example.com @127.1 -p 5053`
+`dig -t a test.example.com @127.0.0.1 -p 5053`
 
-or
+或方向解析：
 
-`dig -t ptr 2.1.168.192.IN-ADDR.ARPA. @127.1 -p 5053`
+`dig -t ptr 2.1.168.192.IN-ADDR.ARPA. @127.0.0.1 -p 5053`
 
-or more simply put
+或简单的：
 
-`dig -x 192.168.1.2 @127.1 -p 5053`
+`dig -x 192.168.1.2 @127.0.0.1 -p 5053`
 
-The binary can be moved to /usr/local/bin, /opt/geodns/ or wherever you find appropriate.
 
-### Command options
+### 命令选项说明
 
-Notable command line parameters (and their defaults)
+注意：`=`后面是默认配置，可以不写
 
-* -config="./dns/"
+* `-config="./dns/"`: 指定zone files的位置，默认配置文件`geodns.conf`
+* `-checkconfig=false`: 检查配置，包括zone file，检查完退出，默认`false`
+* `-interface="*"`： DNS服务监听的IP，默认`*`，可以用逗号分隔，多个IP
+* `-port="53"`：监听端口 (UDP和TCP)
+* `-http=":8053"`：HTTP接口监听的端口. `127.0.0.1:8053`就是只监听`localhost`
+* `-identifier=""`： 实例的标识符，可以是`hostname, pop name`或者类似的。也可以是逗号分隔的一个列表，"server id"开头，然后是"group names", 例如服务器的地区, 服务器所在的anycast集群的名称等。这是将来`reporting/statistics`特征将会用到的。
+* `-log=false`: 日志打印，默认false。测试和debug的时候打开。生产上不推荐，除非请求量很小(<1-200/s).
+* `-cpus=1`: 使用的最大CPU数量. 设为0就用所有的。默认1是经过检验的，推荐。
 
-Directory of zone files (and configuration named `geodns.conf`).
+## WebSocket接口
 
-* -checkconfig=false
-
-Check configuration file, parse zone files and exit
-
-* -interface="*"
-
-Comma separated IPs to listen on for DNS requests.
-
-* -port="53"
-
-Port number for DNS requests (UDP and TCP)
-
-* -http=":8053"
-
-Listen address for HTTP interface. Specify as `127.0.0.1:8053` to only listen on
-localhost.
-
-* -identifier=""
-
-Identifier for this instance (hostname, pop name or similar).
-
-It can also be a comma separated list of identifiers where the first is the "server id"
-and subsequent ones are "group names", for example region of the server, name of anycast
-cluster the server is part of, etc. This is used in (future) reporting/statistics features.
-
-* -log=false
-
-Enable to get lots of extra logging, only useful for testing and debugging. Absolutely not
-recommended in production unless you get very few queries (less than 1-200/second).
-
-* -cpus=1
-
-Maximum number of CPUs to use. Set to 0 to match the number of CPUs available on the system.
-Only "1" (the default) has been extensively tested.
-
-## WebSocket interface
-
-geodns runs a WebSocket server on port 8053 that outputs various performance
-metrics. The WebSocket URL is `/monitor`. There's a "companion program" that can
+`8053`端口上有接口`/monitor`： There's a "companion program" that can
 use this across a cluster to show aggregate statistics, email for more information.
 
-## Runtime status
+## 运行状态接口
 
-There's a page with various runtime information (queries per second, queries and
-most frequently requested labels per zone, etc) at `/status`.
+ `:8053/status`: queries per second, queries and
+most frequently requested labels per zone, etc
 
-## StatHat integration
+## StatHat集成
 
-GeoDNS can post runtime data to [StatHat](http://www.stathat.com/).
-([Documentation](https://github.com/abh/geodns/wiki/StatHat))
+GeoDNS可post数据到 [StatHat](http://www.stathat.com/).详见
+([文档](https://github.com/abh/geodns/wiki/StatHat))
 
-## Country and continent lookups
+## 国家和州的查找
 
-See zone targeting options below.
+见后文。zone targeting options.
 
-## Weighted records
+## 记录值的权重
 
 Most records can have a 'weight' assigned. If any records of a particular type
 for a particular name have a weight, the system will return `max_hosts` records
@@ -175,7 +141,7 @@ As an example, if you configure
 
 with `max_hosts` 2 then .4 will be returned about 4 times more often than .1.
 
-## Configuration file
+## 配置文件
 
 The geodns.conf file allows you to specify a specific directory for the GeoIP
 data files and other options. See the `geodns.conf.sample` file for example
@@ -186,7 +152,7 @@ The global configuration file is not reloaded at runtime.
 Most of the configuration is "per zone" and done in the zone .json files.
 The zone configuration files are automatically reloaded when they change.
 
-## Zone format
+## Zone的格式
 
 In the zone configuration file the whole zone is a big hash (associative array).
 At the top level you can (optionally) set some options with the keys serial,
@@ -218,7 +184,7 @@ The configuration files are automatically reloaded when they're updated. If a fi
 can't be read (invalid JSON, for example) the previous configuration for that zone
 will be kept.
 
-## Zone options
+## Zone选项
 
 * serial
 
@@ -349,7 +315,7 @@ Much like MX records, SRV records can have multiple targets, eg:
         ]
     },
 
-## License and Copyright
+## 许可和版权
 
 This software is Copyright 2012-2015 Ask Bjørn Hansen. For licensing information
 please see the file called LICENSE.
