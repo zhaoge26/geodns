@@ -1,23 +1,20 @@
 # GeoDNS in Go
 
-[English README](./README.md)
-
-[NTP Pool](http://www.pool.ntp.org/)系统和一些类似的服务都用架构在这个DNS基础上. 它是[pgeodns](http://github.com/abh/pgeodns) 的替代者。
+This is the DNS server powering the [NTP Pool](http://www.pool.ntp.org/) system and other
+similar services. It supersedes the [pgeodns](http://github.com/abh/pgeodns) server.
 [![Build Status](https://drone.io/github.com/abh/geodns/status.png)](https://drone.io/github.com/abh/geodns/latest)
 
-据我所知道的这个DNS的作用：根据地域来解析，可以给不同的解析地址加权重。
+## Installation
 
-## 安装
+If you already have go installed, just run `go get` to install the Go
+dependencies. GeoDNS requires Go 1.4 or later.
 
-1. 一些前提
+You will also need the GeoIP C library, on RedHat derived systems
+that's `yum install geoip-devel`.
 
-> 以下命令行是在Amazon Linux AMI release 2017.09上执行的。
-
-* [go](http://code.google.com/p/go/downloads/list)
-* gcc: `yum install gcc`
-* geoip： `yum install geoip geoip-devel`
-
-2. 安装编译
+If you don't have Go installed the easiest way to build geodns from source is to
+download Go from http://code.google.com/p/go/downloads/list and untar'ing it in
+`/usr/local/go` and then run the following from a regular user account:
 
 ```sh
 export PATH=$PATH:/usr/local/go/bin
@@ -29,38 +26,7 @@ go build
 ./geodns -h
 ```
 
-3. 当时遇到两个问题：
-
-```
-# pkg-config --cflags geoip
-Package geoip was not found in the pkg-config search path.
-Perhaps you should add the directory containing `geoip.pc'
-to the PKG_CONFIG_PATH environment variable
-No package 'geoip' found
-```
-
-做了如下操作，添加了一个文件：
-
-```
-cd /usr/lib64/pkgconfig/
-cat geoip.pc 
-
-prefix=/usr
-libdir=/usr/lib64
-includedir=/usr/include
-datadir=${prefix}/share
-
-Name: geoip
-Description: A non-DNS IP-to-country resolver library.
-Version: 1.4.8
-Libs: -L${libdir} -lGeoIP
-Cflags: -I${includedir}/
-databasedir=${datadir}/GeoIP
-```
-
-还有就是关于geo ip的数据不存在的情况，去[官网](http://dev.maxmind.com/geoip/legacy/geolite/)上下载即可，下载后文件放的位置在`dns/geodns.conf`里指定。
-
-## 简单配置
+## Sample configuration
 
 There's a sample configuration file in `dns/example.com.json`. This is currently
 derived from the `test.example.com` data used for unit tests and not an example
