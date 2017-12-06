@@ -1,6 +1,6 @@
 # GeoDNS in Go
 
-[English README](./READM-EN.md)
+[English README](./README-EN.md)
 
 [NTP Pool](http://www.pool.ntp.org/)系统和一些类似的服务都用架构在这个DNS基础上. 它是[pgeodns](http://github.com/abh/pgeodns) 的替代者。
 [![Build Status](https://drone.io/github.com/abh/geodns/status.png)](https://drone.io/github.com/abh/geodns/latest)
@@ -124,46 +124,38 @@ GeoDNS可post数据到 [StatHat](http://www.stathat.com/).详见
 
 ## 记录值的权重
 
-Most records can have a 'weight' assigned. If any records of a particular type
-for a particular name have a weight, the system will return `max_hosts` records
-(default 2).
+多数的记录会有分配一个权重值（weight）。如果某一特定类型的任何记录特定名称有权重，则系统会返回`max_hosts`个记录值，默认是2。
 
-If the weight for all records is 0, all matching records will be returned. The
+如果所有记录的的权重值都为0，所有匹配的记录都将返回。一个标签的权重值可以是任何整数，小于20亿。（The
 weight for a label can be any integer as long as the weights for a label and record
-type is less than 2 billion.
+type is less than 2 billion.）
 
-As an example, if you configure
+一个例子
 
+```
     10.0.0.1, weight 10
     10.0.0.2, weight 20
     10.0.0.3, weight 30
     10.0.0.4, weight 40
+```
 
-with `max_hosts` 2 then .4 will be returned about 4 times more often than .1.
+如果`max_hosts`是2，则返回.4的次数将会是返回.1的4倍。
 
 ## 配置文件
 
-The geodns.conf file allows you to specify a specific directory for the GeoIP
-data files and other options. See the `geodns.conf.sample` file for example
-configuration.
+`geodns.conf`：可以配置一个特定的目录用来存放GeoIP的数据，还有其他一些选项。可以参考 `geodns.conf.sample`
 
-The global configuration file is not reloaded at runtime.
+注意：这个文件的修改不会自动加载，需要重启。(The global configuration file is not reloaded at runtime.)
 
-Most of the configuration is "per zone" and done in the zone .json files.
-The zone configuration files are automatically reloaded when they change.
+多数的配置文件是关于zone的配置，更改后会自动reload。
 
 ## Zone的格式
 
-In the zone configuration file the whole zone is a big hash (associative array).
-At the top level you can (optionally) set some options with the keys serial,
-ttl and max_hosts.
+zone配置文件里，整个zone是一个大的hash (key-value格式，关联数组？associative array). 在最顶层，可选的设置一些选项，如`keys serial, ttl and max_hosts`。
 
-The actual zone data (dns records) is in a hash under the key "data". The keys
-in the hash are hostnames and the value for each hostname is yet another hash
-where the keys are record types (lowercase) and the values an array of records.
+键`data`里是真正的zone数据（dns记录），也是一个hash。hash里的这些键是`hostname`，每一个`hostname`同时又是另一个hash，他们的键是记录(record)类型（小写），值是数组。
 
-For example to setup an MX record at the zone apex and then have a different
-A record for users in Europe than anywhere else, use:
+如下面的列子，在zone里设置一个MX记录，对应的A记录里，给欧洲用户设置了不同的值：
 
     {
         "serial": 1,
@@ -180,65 +172,41 @@ A record for users in Europe than anywhere else, use:
         }
     }
 
-The configuration files are automatically reloaded when they're updated. If a file
-can't be read (invalid JSON, for example) the previous configuration for that zone
-will be kept.
+更新后，该配置会自动重载。一个文件不可读，如不正确的JSON，那么配置将不会被更改，依然是之前的配置。
 
 ## Zone选项
 
-* serial
-
-GeoDNS doesn't support zone transfers (AXFR), so the serial number is only used
-for debugging and monitoring. The default is the 'last modified' timestamp of
-the zone file.
-
-* ttl
-
-Set the default TTL for the zone (default 120).
-
-* targeting
-
-* max_hosts
-
-
-
-* contact
-
-Set the soa 'contact' field (default is "hostmaster.$domain").
+* serial：GeoDNS不支持zone传输（AXFR），所以serial只是用于debug和监控。默认是zone文件的最后更改时间，timestamp格式。
+* ttl：zone的ttl (默认120s).
+* targeting: 
+* max_hosts:
+* contact: 参见soa 'contact'  (默认是"hostmaster.$domain").
 
 ## Zone targeting options
 
 @
-
-country
-continent
-
+country continent
 region and regiongroup
 
-## Supported record types
+## 支持的记录类型
 
-Each label has a hash (object/associative array) of record data, the keys are the type.
-The supported types and their options are listed below.
+每个标签有一个记录值，hash格式(object/associative array)，键是类型。支持的类型和它们的选项如后所列。
 
-Adding support for more record types is relatively straight forward, please open a
-ticket in the issue tracker with what you are missing.
+如果你需要增加更多的记录类型，请在issue tracker里提交。
 
 ### A
 
-Each record has the format of a short array with the first element being the
-IP address and the second the weight.
+格式如下：数组，第一个值是IP，第二个值是权重。
 
     [ [ "192.168.0.1", 10], ["192.168.2.1", 5] ]
 
-See above for how the weights work.
-
 ### AAAA
 
-Same format as A records (except the record type is "aaaa").
+类似A记录，记录类型是"aaaa"。
 
 ### Alias
 
-Internally resolved cname, of sorts. Only works internally in a zone.
+只在zone内部使用，用来解析cname
 
     "foo"
 
@@ -247,66 +215,66 @@ Internally resolved cname, of sorts. Only works internally in a zone.
     "target.example.com."
     "www"
 
-The target will have the current zone name appended if it's not a FQDN (since v2.2.0).
+从v2.2.0开始，如果不是FQDN，则CNAME将会加上当前的zone名。
 
 ### MX
 
-MX records support a `weight` similar to A records to indicate how often the particular
-record should be returned.
+类似A记录，MX记录也支持用`weight`指明权重，来表明一个记录的返回频率。
 
-The `preference` is the MX record preference returned to the client.
+`preference` 是MX记录返回给客户的偏好值。
+
+`weight`和 `preference`是可选的。
 
     { "mx": "foo.example.com" }
     { "mx": "foo.example.com", "weight": 100 }
     { "mx": "foo.example.com", "weight": 100, "preference": 10 }
 
-`weight` and `preference` are optional.
-
 ### NS
 
-NS records for the label, use it on the top level empty label (`""`) to specify
-the nameservers for the domain.
+NS记录，在zone配置的顶层，标签是空(`""`)，用来指定该域的域名服务器。
 
     [ "ns1.example.com", "ns2.example.com" ]
 
 There's an alternate legacy syntax that has space for glue records (IPv4 addresses),
 but in GeoDNS the values in the object are ignored so the list syntax above is
 recommended.
+如下是一个老语法，不推荐。
 
     { "ns1.example.net.": null, "ns2.example.net.": null }
 
 ### TXT
 
-Simple syntax
+基本语法:
 
     "Some text"
 
-Or with weights
+也可以带权重值：
 
     { "txt": "Some text", "weight": 10 }
 
 ### SPF
 
-An SPF record is semantically identical to a TXT record with the exception that the label is set to 'spf'. An example of an spf record with weights:
+SPF记录，语义上同TXT记录。
 
+一个例子，带有权重值：
 
     { "spf": "v=spf1 ~all]", "weight": 1 }
 
-An spf record is typically at the root of a zone, and a label can have an array of SPF records, e.g
+spf记录是在zone的root里，可以是任意值，数组格式。
 
       "spf": [ { "spf": "v=spf1 ~all", "weight": 1 } , "spf": "v=spf1 10.0.0.1", "weight": 100]
 
 ### SRV
 
-An SRV record has four components: the weight, priority, port and target. The keys for these are "srv_weight", "priority", "target" and "port". Note the difference between srv_weight (the weight key for the SRV qtype) and "weight".
+SRV记录由4部分组成：权重，优先级，端口和目标，键名是"srv_weight", "priority", "target", "port"。注意srv_weight和weight的不同。
 
-An example srv record definition for the _sip._tcp service:
+下面是一个`_sip._tcp`服务的srv记录定义：
 
     "_sip._tcp": {
         "srv": [ { "port": 5060, "srv_weight": 100, "priority": 10, "target": "sipserver.example.com."} ]
     },
 
-Much like MX records, SRV records can have multiple targets, eg:
+类似MX，SRV记录也可以用多个目标：
 
     "_http._tcp": {
         "srv": [
